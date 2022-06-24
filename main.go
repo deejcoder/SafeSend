@@ -2,8 +2,8 @@ package main
 
 import (
 	"SafeSend/config"
-	"SafeSend/storage"
 	"SafeSend/storage/collections"
+	storage "SafeSend/storage/database"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -34,6 +34,7 @@ func Start() {
 	db := new(storage.Database)
 	db.Connect()
 
+	collections.CreateUser(db, "deejcoder")
 	users, err := collections.GetUsers(db)
 	if err != nil {
 		log.Error(err)
