@@ -1,0 +1,8 @@
+version: v1.0.0
+log_level: "info"
+
+db:
+  host: localhost
+  port: 27017
+  database: example
+  user: example
