@@ -1,22 +1,27 @@
-package collections
+package users
 
 import (
 	storage "SafeSend/storage/database"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type User struct {
-	Entity      `bson:",inline"`
-	DisplayName string `json:"display_name" bson:"display_name"`
+	ID           primitive.ObjectID `json:"_id" bson:"_id"`
+	DisplayName  string             `json:"display_name" bson:"display_name"`
+	LastAccessed time.Time          `json:"last_accessed" bson:"last_accessed"`
+	DateCreated  time.Time          `json:"date_created" bson:"date_created"`
+	DateModified time.Time          `json:"date_modified" bson:"date_modified"`
 }
 
-func SetCollection(db *storage.Database) *mongo.Collection {
+func setCollection(db *storage.Database) *mongo.Collection {
 	return db.SetCollection("users")
 }
 
 func GetUsers(db *storage.Database) ([]*User, error) {
-	col := SetCollection(db)
+	col := setCollection(db)
 
 	users := make([]*User, 0)
 	cursor, err := col.Find(db.DefaultContext(), bson.D{{}})
@@ -43,28 +48,27 @@ func GetUsers(db *storage.Database) ([]*User, error) {
 }
 
 // CreateUser creates a new user and returns it
-func CreateUser(db *storage.Database, displayName string) (*User, error) {
-	col := SetCollection(db)
+func CreateUser(db *storage.Database, displayName string) error {
+	col := setCollection(db)
 
 	user := User{
-
-		DisplayName: displayName,
+		ID:           primitive.NewObjectID(),
+		DisplayName:  displayName,
+		DateCreated:  time.Now(),
+		DateModified: time.Now(),
 	}
 
-	result, err := col.InsertOne(db.DefaultContext(), user)
+	_, err := col.InsertOne(db.DefaultContext(), user)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	oid, _ := db.GetObjectId(result)
-	user.ID = oid
-	return FindUser(db, &user)
+	return nil
 }
 
 // FindUser finds a user based on populated attributes
 func FindUser(db *storage.Database, user *User) (*User, error) {
-
-	col := SetCollection(db)
+	col := setCollection(db)
 
 	result := col.FindOne(db.DefaultContext(), user)
 	if result.Err() != nil {

@@ -2,7 +2,7 @@ package main
 
 import (
 	"SafeSend/config"
-	"SafeSend/storage/collections"
+	"SafeSend/storage/collections/users"
 	storage "SafeSend/storage/database"
 	"fmt"
 	log "github.com/sirupsen/logrus"
@@ -34,20 +34,14 @@ func Start() {
 	db := new(storage.Database)
 	db.Connect()
 
-	collections.CreateUser(db, "deejcoder")
-	users, err := collections.GetUsers(db)
+	users.CreateUser(db, "deejcoder2")
+	users, err := users.GetUsers(db)
 	if err != nil {
 		log.Error(err)
 	}
 
-	for idx, user := range users {
-		fmt.Printf("User %d: %s", idx, user.DisplayName)
+	for _, user := range users {
+		fmt.Printf("User %d: %s", user.ID, user.DisplayName)
 	}
 
-	//Close()
-
-}
-
-func Close() {
-	storage.Close()
 }
