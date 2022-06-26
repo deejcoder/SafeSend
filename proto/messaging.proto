@@ -1,0 +1,47 @@
+syntax = "proto3";
+option go_package = "./messagingpb";
+
+import "google/protobuf/timestamp.proto";
+
+
+service MessageService {
+  rpc SendMessage(Message) returns (AckMessage);
+}
+
+message Header {
+
+  message Entity {
+
+    enum EntityType {
+      GROUP = 0;
+      USER = 1;
+    }
+
+    string id = 1;
+    EntityType type = 2;
+  }
+
+  Entity sender = 1;
+  Entity recipient = 2;
+  google.protobuf.Timestamp date_sent = 3;
+  string message_id = 4;
+}
+
+message Message {
+
+  Header header = 1;
+  string message = 3;
+
+}
+
+message AckMessage {
+
+  enum Status {
+    Delivered = 0;
+    Read = 1;
+  }
+
+  Header header = 1;
+  Status status = 2;
+
+}

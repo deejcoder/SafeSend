@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"SafeSend/config"
+	"SafeSend/server/config"
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"

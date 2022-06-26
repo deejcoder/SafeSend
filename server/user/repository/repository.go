@@ -1,7 +1,7 @@
-package users
+package repository
 
 import (
-	storage "SafeSend/storage/database"
+	"SafeSend/server/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,8 +16,10 @@ type User struct {
 	DateModified time.Time          `json:"date_modified" bson:"date_modified"`
 }
 
+const collectionName = "user"
+
 func setCollection(db *storage.Database) *mongo.Collection {
-	return db.SetCollection("users")
+	return db.SetCollection(collectionName)
 }
 
 func GetUsers(db *storage.Database) ([]*User, error) {

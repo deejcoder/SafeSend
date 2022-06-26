@@ -1,8 +1,8 @@
-package groups
+package repository
 
 import (
-	"SafeSend/storage/collections/users"
-	storage "SafeSend/storage/database"
+	"SafeSend/server/storage"
+	mongo2 "SafeSend/server/user/repository"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,13 +14,15 @@ type Group struct {
 	GroupName       string             `json:"group_name" bson:"group_name"`
 	MaxParticipants int                `json:"max_participants" bson:"max_participants"`
 	InviteOnly      bool               `json:"invite_only" bson:"invite_only"`
-	Users           []users.User
+	Users           []mongo2.User
 	DateCreated     time.Time `json:"date_created" bson:"date_created"`
 	DateModified    time.Time `json:"date_modified" bson:"date_modified"`
 }
 
+const collectionName = "group"
+
 func setCollection(db *storage.Database) *mongo.Collection {
-	return db.SetCollection("groups")
+	return db.SetCollection(collectionName)
 }
 
 func GetGroups(db *storage.Database) ([]*Group, error) {

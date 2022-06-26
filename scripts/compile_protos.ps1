@@ -1,0 +1,1 @@
+protoc --go-grpc_out=service/messaging --go_out=service/messaging proto/messaging.proto
