@@ -1,9 +1,8 @@
 package main
 
 import (
-	"SafeSend/server/config"
-	"SafeSend/server/storage"
-	"SafeSend/server/user/repository"
+	"SafeSend/pkg/config"
+	"SafeSend/pkg/storage"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -32,16 +31,9 @@ func Start() {
 	config.InitConfig()
 
 	db := new(storage.Database)
-	db.Connect()
-
-	repository.CreateUser(db, "deejcoder2")
-	users, err := repository.GetUsers(db)
+	err := db.Connect()
 	if err != nil {
-		log.Error(err)
-	}
-
-	for _, user := range users {
-		fmt.Printf("User %d: %s", user.ID, user.DisplayName)
+		log.Fatal(err)
 	}
 
 }
