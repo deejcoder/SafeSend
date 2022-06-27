@@ -3,6 +3,8 @@ log_level: "info"
 
 db:
   host: localhost
-  port: 27017
-  database: example
-  user: example
+  port: 5432
+  database: safe_send
+  user: ss_admin
+  password: << keep secret >>
+  ssl_mode: enable
