@@ -33,5 +33,6 @@ func (User) Edges() []ent.Edge {
 		edge.From("entities", Entity.Type).
 			Ref("users").
 			Unique(),
+		edge.To("access_tokens", AccessToken.Type),
 	}
 }

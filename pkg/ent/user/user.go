@@ -29,6 +29,8 @@ const (
 	EdgeGroups = "groups"
 	// EdgeEntities holds the string denoting the entities edge name in mutations.
 	EdgeEntities = "entities"
+	// EdgeAccessTokens holds the string denoting the access_tokens edge name in mutations.
+	EdgeAccessTokens = "access_tokens"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// GroupsTable is the table that holds the groups relation/edge.
@@ -45,6 +47,11 @@ const (
 	EntitiesInverseTable = "entities"
 	// EntitiesColumn is the table column denoting the entities relation/edge.
 	EntitiesColumn = "entity_users"
+	// AccessTokensTable is the table that holds the access_tokens relation/edge. The primary key declared below.
+	AccessTokensTable = "user_access_tokens"
+	// AccessTokensInverseTable is the table name for the AccessToken entity.
+	// It exists in this package in order to avoid circular dependency with the "accesstoken" package.
+	AccessTokensInverseTable = "access_tokens"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -63,6 +70,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"entity_users",
 }
+
+var (
+	// AccessTokensPrimaryKey and AccessTokensColumn2 are the table columns denoting the
+	// primary key for the access_tokens relation (M2M).
+	AccessTokensPrimaryKey = []string{"user_id", "access_token_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

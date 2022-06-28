@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"SafeSend/pkg/ent/accesstoken"
 	"SafeSend/pkg/ent/entity"
 	"SafeSend/pkg/ent/group"
 	"SafeSend/pkg/ent/user"
@@ -137,6 +138,21 @@ func (uc *UserCreate) SetNillableEntitiesID(id *uuid.UUID) *UserCreate {
 // SetEntities sets the "entities" edge to the Entity entity.
 func (uc *UserCreate) SetEntities(e *Entity) *UserCreate {
 	return uc.SetEntitiesID(e.ID)
+}
+
+// AddAccessTokenIDs adds the "access_tokens" edge to the AccessToken entity by IDs.
+func (uc *UserCreate) AddAccessTokenIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddAccessTokenIDs(ids...)
+	return uc
+}
+
+// AddAccessTokens adds the "access_tokens" edges to the AccessToken entity.
+func (uc *UserCreate) AddAccessTokens(a ...*AccessToken) *UserCreate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uc.AddAccessTokenIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -359,6 +375,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.entity_users = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.AccessTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.AccessTokensTable,
+			Columns: user.AccessTokensPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: accesstoken.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

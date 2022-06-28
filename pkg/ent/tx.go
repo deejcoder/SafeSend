@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// AccessToken is the client for interacting with the AccessToken builders.
+	AccessToken *AccessTokenClient
 	// Entity is the client for interacting with the Entity builders.
 	Entity *EntityClient
 	// Group is the client for interacting with the Group builders.
@@ -153,6 +155,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.AccessToken = NewAccessTokenClient(tx.config)
 	tx.Entity = NewEntityClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.User = NewUserClient(tx.config)
@@ -165,7 +168,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Entity.QueryXXX(), the query will be executed
+// applies a query, for example: AccessToken.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

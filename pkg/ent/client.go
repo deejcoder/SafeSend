@@ -9,6 +9,7 @@ import (
 
 	"SafeSend/pkg/ent/migrate"
 
+	"SafeSend/pkg/ent/accesstoken"
 	"SafeSend/pkg/ent/entity"
 	"SafeSend/pkg/ent/group"
 	"SafeSend/pkg/ent/user"
@@ -24,6 +25,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// AccessToken is the client for interacting with the AccessToken builders.
+	AccessToken *AccessTokenClient
 	// Entity is the client for interacting with the Entity builders.
 	Entity *EntityClient
 	// Group is the client for interacting with the Group builders.
@@ -43,6 +46,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.AccessToken = NewAccessTokenClient(c.config)
 	c.Entity = NewEntityClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -77,11 +81,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Entity: NewEntityClient(cfg),
-		Group:  NewGroupClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		AccessToken: NewAccessTokenClient(cfg),
+		Entity:      NewEntityClient(cfg),
+		Group:       NewGroupClient(cfg),
+		User:        NewUserClient(cfg),
 	}, nil
 }
 
@@ -99,18 +104,19 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Entity: NewEntityClient(cfg),
-		Group:  NewGroupClient(cfg),
-		User:   NewUserClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		AccessToken: NewAccessTokenClient(cfg),
+		Entity:      NewEntityClient(cfg),
+		Group:       NewGroupClient(cfg),
+		User:        NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Entity.
+//		AccessToken.
 //		Query().
 //		Count(ctx)
 //
@@ -133,9 +139,116 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.AccessToken.Use(hooks...)
 	c.Entity.Use(hooks...)
 	c.Group.Use(hooks...)
 	c.User.Use(hooks...)
+}
+
+// AccessTokenClient is a client for the AccessToken schema.
+type AccessTokenClient struct {
+	config
+}
+
+// NewAccessTokenClient returns a client for the AccessToken from the given config.
+func NewAccessTokenClient(c config) *AccessTokenClient {
+	return &AccessTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `accesstoken.Hooks(f(g(h())))`.
+func (c *AccessTokenClient) Use(hooks ...Hook) {
+	c.hooks.AccessToken = append(c.hooks.AccessToken, hooks...)
+}
+
+// Create returns a create builder for AccessToken.
+func (c *AccessTokenClient) Create() *AccessTokenCreate {
+	mutation := newAccessTokenMutation(c.config, OpCreate)
+	return &AccessTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AccessToken entities.
+func (c *AccessTokenClient) CreateBulk(builders ...*AccessTokenCreate) *AccessTokenCreateBulk {
+	return &AccessTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AccessToken.
+func (c *AccessTokenClient) Update() *AccessTokenUpdate {
+	mutation := newAccessTokenMutation(c.config, OpUpdate)
+	return &AccessTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AccessTokenClient) UpdateOne(at *AccessToken) *AccessTokenUpdateOne {
+	mutation := newAccessTokenMutation(c.config, OpUpdateOne, withAccessToken(at))
+	return &AccessTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AccessTokenClient) UpdateOneID(id uuid.UUID) *AccessTokenUpdateOne {
+	mutation := newAccessTokenMutation(c.config, OpUpdateOne, withAccessTokenID(id))
+	return &AccessTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AccessToken.
+func (c *AccessTokenClient) Delete() *AccessTokenDelete {
+	mutation := newAccessTokenMutation(c.config, OpDelete)
+	return &AccessTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *AccessTokenClient) DeleteOne(at *AccessToken) *AccessTokenDeleteOne {
+	return c.DeleteOneID(at.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *AccessTokenClient) DeleteOneID(id uuid.UUID) *AccessTokenDeleteOne {
+	builder := c.Delete().Where(accesstoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AccessTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for AccessToken.
+func (c *AccessTokenClient) Query() *AccessTokenQuery {
+	return &AccessTokenQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a AccessToken entity by its id.
+func (c *AccessTokenClient) Get(ctx context.Context, id uuid.UUID) (*AccessToken, error) {
+	return c.Query().Where(accesstoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AccessTokenClient) GetX(ctx context.Context, id uuid.UUID) *AccessToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUsers queries the users edge of a AccessToken.
+func (c *AccessTokenClient) QueryUsers(at *AccessToken) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := at.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(accesstoken.Table, accesstoken.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, accesstoken.UsersTable, accesstoken.UsersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(at.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AccessTokenClient) Hooks() []Hook {
+	return c.hooks.AccessToken
 }
 
 // EntityClient is a client for the Entity schema.
@@ -492,6 +605,22 @@ func (c *UserClient) QueryEntities(u *User) *EntityQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(entity.Table, entity.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, user.EntitiesTable, user.EntitiesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAccessTokens queries the access_tokens edge of a User.
+func (c *UserClient) QueryAccessTokens(u *User) *AccessTokenQuery {
+	query := &AccessTokenQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(accesstoken.Table, accesstoken.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.AccessTokensTable, user.AccessTokensPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

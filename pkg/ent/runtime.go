@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"SafeSend/pkg/ent/accesstoken"
 	"SafeSend/pkg/ent/entity"
 	"SafeSend/pkg/ent/group"
 	"SafeSend/pkg/ent/schema"
@@ -16,6 +17,28 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	accesstokenFields := schema.AccessToken{}.Fields()
+	_ = accesstokenFields
+	// accesstokenDescAccessToken is the schema descriptor for access_token field.
+	accesstokenDescAccessToken := accesstokenFields[2].Descriptor()
+	// accesstoken.AccessTokenValidator is a validator for the "access_token" field. It is called by the builders before save.
+	accesstoken.AccessTokenValidator = accesstokenDescAccessToken.Validators[0].(func(string) error)
+	// accesstokenDescRefreshToken is the schema descriptor for refresh_token field.
+	accesstokenDescRefreshToken := accesstokenFields[3].Descriptor()
+	// accesstoken.RefreshTokenValidator is a validator for the "refresh_token" field. It is called by the builders before save.
+	accesstoken.RefreshTokenValidator = accesstokenDescRefreshToken.Validators[0].(func(string) error)
+	// accesstokenDescDateCreated is the schema descriptor for date_created field.
+	accesstokenDescDateCreated := accesstokenFields[5].Descriptor()
+	// accesstoken.DefaultDateCreated holds the default value on creation for the date_created field.
+	accesstoken.DefaultDateCreated = accesstokenDescDateCreated.Default.(time.Time)
+	// accesstokenDescDateModified is the schema descriptor for date_modified field.
+	accesstokenDescDateModified := accesstokenFields[6].Descriptor()
+	// accesstoken.DefaultDateModified holds the default value on creation for the date_modified field.
+	accesstoken.DefaultDateModified = accesstokenDescDateModified.Default.(time.Time)
+	// accesstokenDescID is the schema descriptor for id field.
+	accesstokenDescID := accesstokenFields[0].Descriptor()
+	// accesstoken.DefaultID holds the default value on creation for the id field.
+	accesstoken.DefaultID = accesstokenDescID.Default.(func() uuid.UUID)
 	entityFields := schema.Entity{}.Fields()
 	_ = entityFields
 	// entityDescDateCreated is the schema descriptor for date_created field.

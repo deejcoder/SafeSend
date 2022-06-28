@@ -8,6 +8,19 @@ import (
 	"fmt"
 )
 
+// The AccessTokenFunc type is an adapter to allow the use of ordinary
+// function as AccessToken mutator.
+type AccessTokenFunc func(context.Context, *ent.AccessTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AccessTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AccessTokenMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccessTokenMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The EntityFunc type is an adapter to allow the use of ordinary
 // function as Entity mutator.
 type EntityFunc func(context.Context, *ent.EntityMutation) (ent.Value, error)

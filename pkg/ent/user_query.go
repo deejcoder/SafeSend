@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"SafeSend/pkg/ent/accesstoken"
 	"SafeSend/pkg/ent/entity"
 	"SafeSend/pkg/ent/group"
 	"SafeSend/pkg/ent/predicate"
@@ -29,9 +30,10 @@ type UserQuery struct {
 	fields     []string
 	predicates []predicate.User
 	// eager-loading edges.
-	withGroups   *GroupQuery
-	withEntities *EntityQuery
-	withFKs      bool
+	withGroups       *GroupQuery
+	withEntities     *EntityQuery
+	withAccessTokens *AccessTokenQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -105,6 +107,28 @@ func (uq *UserQuery) QueryEntities() *EntityQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(entity.Table, entity.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, user.EntitiesTable, user.EntitiesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAccessTokens chains the current query on the "access_tokens" edge.
+func (uq *UserQuery) QueryAccessTokens() *AccessTokenQuery {
+	query := &AccessTokenQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(accesstoken.Table, accesstoken.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.AccessTokensTable, user.AccessTokensPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -288,13 +312,14 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:       uq.config,
-		limit:        uq.limit,
-		offset:       uq.offset,
-		order:        append([]OrderFunc{}, uq.order...),
-		predicates:   append([]predicate.User{}, uq.predicates...),
-		withGroups:   uq.withGroups.Clone(),
-		withEntities: uq.withEntities.Clone(),
+		config:           uq.config,
+		limit:            uq.limit,
+		offset:           uq.offset,
+		order:            append([]OrderFunc{}, uq.order...),
+		predicates:       append([]predicate.User{}, uq.predicates...),
+		withGroups:       uq.withGroups.Clone(),
+		withEntities:     uq.withEntities.Clone(),
+		withAccessTokens: uq.withAccessTokens.Clone(),
 		// clone intermediate query.
 		sql:    uq.sql.Clone(),
 		path:   uq.path,
@@ -321,6 +346,17 @@ func (uq *UserQuery) WithEntities(opts ...func(*EntityQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withEntities = query
+	return uq
+}
+
+// WithAccessTokens tells the query-builder to eager-load the nodes that are connected to
+// the "access_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithAccessTokens(opts ...func(*AccessTokenQuery)) *UserQuery {
+	query := &AccessTokenQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withAccessTokens = query
 	return uq
 }
 
@@ -390,9 +426,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			uq.withGroups != nil,
 			uq.withEntities != nil,
+			uq.withAccessTokens != nil,
 		}
 	)
 	if uq.withEntities != nil {
@@ -475,6 +512,71 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Entities = n
+			}
+		}
+	}
+
+	if query := uq.withAccessTokens; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[uuid.UUID]*User, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.AccessTokens = []*AccessToken{}
+		}
+		var (
+			edgeids []uuid.UUID
+			edges   = make(map[uuid.UUID][]*User)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   user.AccessTokensTable,
+				Columns: user.AccessTokensPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(user.AccessTokensPrimaryKey[0], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(uuid.UUID), new(uuid.UUID)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*uuid.UUID)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*uuid.UUID)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := *eout
+				inValue := *ein
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, uq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "access_tokens": %w`, err)
+		}
+		query.Where(accesstoken.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "access_tokens" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.AccessTokens = append(nodes[i].Edges.AccessTokens, n)
 			}
 		}
 	}

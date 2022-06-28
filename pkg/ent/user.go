@@ -42,9 +42,11 @@ type UserEdges struct {
 	Groups []*Group `json:"groups,omitempty"`
 	// Entities holds the value of the entities edge.
 	Entities *Entity `json:"entities,omitempty"`
+	// AccessTokens holds the value of the access_tokens edge.
+	AccessTokens []*AccessToken `json:"access_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // GroupsOrErr returns the Groups value or an error if the edge
@@ -68,6 +70,15 @@ func (e UserEdges) EntitiesOrErr() (*Entity, error) {
 		return e.Entities, nil
 	}
 	return nil, &NotLoadedError{edge: "entities"}
+}
+
+// AccessTokensOrErr returns the AccessTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) AccessTokensOrErr() ([]*AccessToken, error) {
+	if e.loadedTypes[2] {
+		return e.AccessTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "access_tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -160,6 +171,11 @@ func (u *User) QueryGroups() *GroupQuery {
 // QueryEntities queries the "entities" edge of the User entity.
 func (u *User) QueryEntities() *EntityQuery {
 	return (&UserClient{config: u.config}).QueryEntities(u)
+}
+
+// QueryAccessTokens queries the "access_tokens" edge of the User entity.
+func (u *User) QueryAccessTokens() *AccessTokenQuery {
+	return (&UserClient{config: u.config}).QueryAccessTokens(u)
 }
 
 // Update returns a builder for updating this User.

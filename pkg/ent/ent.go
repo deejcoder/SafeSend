@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"SafeSend/pkg/ent/accesstoken"
 	"SafeSend/pkg/ent/entity"
 	"SafeSend/pkg/ent/group"
 	"SafeSend/pkg/ent/user"
@@ -31,9 +32,10 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		entity.Table: entity.ValidColumn,
-		group.Table:  group.ValidColumn,
-		user.Table:   user.ValidColumn,
+		accesstoken.Table: accesstoken.ValidColumn,
+		entity.Table:      entity.ValidColumn,
+		group.Table:       group.ValidColumn,
+		user.Table:        user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

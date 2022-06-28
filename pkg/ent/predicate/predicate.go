@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AccessToken is the predicate function for accesstoken builders.
+type AccessToken func(*sql.Selector)
+
 // Entity is the predicate function for entity builders.
 type Entity func(*sql.Selector)
 
