@@ -6,8 +6,8 @@ import (
 	"SafeSend/pkg/ent/accesstoken"
 	"SafeSend/pkg/ent/entity"
 	"SafeSend/pkg/ent/group"
-	"SafeSend/pkg/ent/schema"
 	"SafeSend/pkg/ent/user"
+	"SafeSend/pkg/schema"
 	"time"
 
 	"github.com/google/uuid"

@@ -1,0 +1,20 @@
+syntax = "proto3";
+option go_package = "./pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+
+message Response {
+
+  enum ResponseStatus {
+    OK = 0;
+    ERR = 1;
+    WARN = 2;
+    NOT_AUTHORISED = 3;
+  }
+
+  ResponseStatus Status = 1;
+  string Message = 2;
+  google.protobuf.Any Data = 3;
+}

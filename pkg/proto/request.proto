@@ -1,0 +1,19 @@
+syntax = "proto3";
+option go_package = "./pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+
+message Request {
+
+  enum RequestStatus {
+    OK = 0;
+    ERR = 1;
+    WARN = 2;
+  }
+
+  RequestStatus Status = 1;
+  string Message = 2;
+  google.protobuf.Any Data = 3;
+}
