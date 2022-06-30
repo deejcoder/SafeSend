@@ -1,3 +1,6 @@
-protoc --proto_path=./proto --go-grpc_out=services/auth --go_out=services/auth proto/auth.proto
-protoc --proto_path=./proto --go-grpc_out=services/models --go_out=services/models proto/request.proto
-protoc --proto_path=./proto --go-grpc_out=services/models --go_out=services/models proto/response.proto
+$Env:OUTPUT_PATH = 'services/'
+$Env:IMPORT_PATH = 'proto/'
+
+protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH proto/auth.proto
+protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH proto/request.proto
+protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH proto/response.proto
