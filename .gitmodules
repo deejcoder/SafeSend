@@ -1,0 +1,3 @@
+[submodule "pkg/proto"]
+	path = pkg/proto
+	url = https://github.com/deejcoder/safesend-protos
