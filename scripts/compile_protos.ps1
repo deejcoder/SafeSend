@@ -1,6 +1,4 @@
-$Env:OUTPUT_PATH = 'services/'
-$Env:IMPORT_PATH = 'proto/'
+$Env:OUTPUT_PATH = 'pkg/services/'
+$Env:IMPORT_PATH = 'pkg/proto/'
 
-protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH proto/auth.proto
-protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH proto/request.proto
-protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH proto/response.proto
+protoc --proto_path=$Env:IMPORT_PATH --go-grpc_out=$Env:OUTPUT_PATH --go_out=$Env:OUTPUT_PATH pkg/proto/*.proto
